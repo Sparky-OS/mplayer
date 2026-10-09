@@ -7409,6 +7409,7 @@ if test "$ffmpeg_so" = auto ; then
     ld_tmp=$($_pkg_config --libs libswscale libswresample libavformat libavcodec libavutil)
     header_check libavutil/avutil.h $inc_ffmpeg $ld_tmp &&
       extra_cflags="$extra_cflags $inc_ffmpeg" &&
+      HOSTCFLAGS="$HOSTCFLAGS $inc_ffmpeg" &&
       extra_ldflags="$extra_ldflags $ld_tmp" && ffmpeg_so=yes && ffmpeg=yes
   elif header_check libavutil/avutil.h -lswscale -lswresample -lavformat -lavcodec -lavutil ; then
     extra_ldflags="$extra_ldflags -lswscale -lswresample -lavformat -lavcodec -lavutil"
