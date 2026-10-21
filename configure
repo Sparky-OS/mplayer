@@ -1556,7 +1556,7 @@ if test "$ffmpeg_a" != "no" && ! test -e ffmpeg ; then
 fi
 
 ffmpeg_filter_struct_name=AVFilter
-if grep -q FFFilter ffmpeg/configure; then
+if grep -qs FFFilter ffmpeg/configure; then
     ffmpeg_filter_struct_name=FFFilter
 fi
 
