@@ -1143,6 +1143,9 @@ static GtkWidget * CreatePreferences( void )
   old_auto_quality = auto_quality;
   HSPPQualityadj=GTK_ADJUSTMENT( gtk_adjustment_new( auto_quality,0,100,1,0,0 ) );
   HSPPQuality=gtkAddHScale( HSPPQualityadj,hbox5,0 );
+#ifndef CONFIG_POSTPROC
+  gtk_widget_set_sensitive(vbox602, FALSE);
+#endif
 
   vbox602=gtkAddVBox(
     gtkAddFrame( NULL,GTK_SHADOW_NONE,
