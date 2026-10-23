@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <math.h>
 #include "config.h"
 #include "mp_msg.h"
 #include "fmt-conversion.h"
@@ -264,8 +265,11 @@ static void write_chunk(muxer_stream_t *stream, size_t len, unsigned int flags, 
 	else
 		pkt.flags = 0;
 
-	pkt.dts = (dts / av_q2d(priv->oc->streams[pkt.stream_index]->time_base) + 0.5);
-	pkt.pts = (pts / av_q2d(priv->oc->streams[pkt.stream_index]->time_base) + 0.5);
+	pkt.dts = llrint(dts / av_q2d(spriv->avstream->time_base));
+	pkt.pts = llrint(pts / av_q2d(spriv->avstream->time_base));
+	if (stream->type == MUXER_TYPE_VIDEO)
+		pkt.duration = av_rescale_q(1, (AVRational){stream->h.dwScale, stream->h.dwRate},
+		                           spriv->avstream->time_base);
 //fprintf(stderr, "%Ld %Ld id:%d tb:%f %f\n", pkt.dts, pkt.pts, pkt.stream_index, av_q2d(priv->oc->streams[pkt.stream_index]->time_base), stream->timer);
 
 	if(av_interleaved_write_frame(priv->oc, &pkt) != 0) //av_write_frame(priv->oc, &pkt)
