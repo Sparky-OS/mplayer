@@ -57,6 +57,7 @@ typedef struct h264_module_t {
     muxer_stream_t *mux;
     x264_t *    x264;
     x264_picture_t  pic;
+    int64_t next_pts;
 } h264_module_t;
 
 static x264_param_t param;
@@ -159,6 +160,8 @@ static int config(struct vf_instance *vf, int width, int height, int d_width, in
     param.i_fps_num = mod->mux->h.dwRate;
     param.i_fps_den = mod->mux->h.dwScale;
     param.b_vfr_input = 0;
+    param.i_timebase_num = param.i_fps_den;
+    param.i_timebase_den = param.i_fps_num;
     param.vui.i_sar_width = d_width*height;
     param.vui.i_sar_height = d_height*width;
 
@@ -247,6 +250,7 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts, double
     }
 
     mod->pic.i_type = X264_TYPE_AUTO;
+    mod->pic.i_pts = mod->next_pts++;
     if (is_forced_key_frame(pts))
         mod->pic.i_type = X264_TYPE_KEYFRAME;
 
@@ -269,8 +273,10 @@ static int encode_frame(struct vf_instance *vf, x264_picture_t *pic_in)
     }
     if(i_size>0) {
         int keyframe = pic_out.b_keyframe;
+        double timebase = (double)param.i_timebase_num / param.i_timebase_den;
         memcpy(mod->mux->buffer, nal->p_payload, i_size);
-        muxer_write_chunk(mod->mux, i_size, keyframe?AVIIF_KEYFRAME:0, MP_NOPTS_VALUE, MP_NOPTS_VALUE);
+        muxer_write_chunk(mod->mux, i_size, keyframe?AVIIF_KEYFRAME:0,
+                          pic_out.i_dts * timebase, pic_out.i_pts * timebase);
     }
     else
         ++mod->mux->encoder_delay;
@@ -297,6 +303,7 @@ static int vf_open(vf_instance_t *vf, char *args) {
     vf->priv = malloc(sizeof(h264_module_t));
 
     mod=(h264_module_t*)vf->priv;
+    mod->next_pts = 0;
     mod->mux = (muxer_stream_t*)args;
     mod->mux->bih = calloc(1, sizeof(*mod->mux->bih));
     mod->mux->bih->biSize = sizeof(*mod->mux->bih);
