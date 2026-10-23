@@ -1433,7 +1433,8 @@ if(sh_audio){
     if(frame_data.in_size<0){ frame_data.already_read = 0; at_eof|=1; continue; }
     ++decoded_frameno;
 
-    v_timer_corr-=frame_data.frame_time-(float)mux_v->h.dwScale/mux_v->h.dwRate;
+    if (!frame_data.flush)
+        v_timer_corr-=frame_data.frame_time-(float)mux_v->h.dwScale/mux_v->h.dwRate;
 
 if(demuxer2){	// 3-pass encoding, read control file (frameno.avi)
     // find our frame:
@@ -1509,6 +1510,13 @@ default:
     if (did_seek && sh_video->pts != MP_NOPTS_VALUE) {
         did_seek = 0;
         sub_offset = sh_video->pts;
+    }
+    if (!decoded_frame && !drop_frame) {
+        // A buffered decoder frame is not a missing output frame.
+        if (play_n_frames >= 0)
+            play_n_frames++;
+        frame_data = (s_frame_data){0};
+        continue;
     }
     // NOTE: this is not really correct, but it allows -ass to work mostly
     // v_muxer_time was tried before, but it is completely off when -ss is used
